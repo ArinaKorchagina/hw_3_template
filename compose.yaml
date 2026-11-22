@@ -1,0 +1,56 @@
+# Финальная конфигурация (уровни 8 и 10): приложение + отдельный Redis.
+# Настройки берутся из .env (см. .env.example) или из переменных окружения.
+
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      STORAGE: redis
+      # Адрес по имени сервиса, а не localhost или IP контейнера
+      REDIS_URL: redis://redis:6379/0
+      GREETING: ${GREETING:-Hello, Docker!}
+      PORT: "8000"
+    ports:
+      # Единственный опубликованный порт: хост ← контейнер
+      - "${APP_PORT:-8080}:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    # Ограничения процесса (уровень 10)
+    user: "10001:10001"       # UID != 0
+    read_only: true           # корневая ФС только для чтения
+    tmpfs:
+      - /tmp                  # на случай, если что-то захочет писать во временный каталог
+    mem_limit: 256m           # не больше 256 MiB RAM
+    memswap_limit: 256m       # без дополнительного swap
+    cpus: 1.0                 # не больше одного ядра
+    # Контейнер "healthy" только когда приложение видит Redis (/readyz = 200)
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/readyz', timeout=2)"
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    # Запись на диск: AOF (append only file) в /data
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    # Порты не публикуются: Redis доступен только приложению внутри сети Compose
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
+
+volumes:
+  redis_data:

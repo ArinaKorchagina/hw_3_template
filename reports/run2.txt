@@ -1,0 +1,144 @@
+
+==> 0. Проверка окружения
+    проект: hw3check-15244-1795368393, порт: 22026, N=5
+
+==> 1. Создание тестового проекта с пустым хранилищем
+ Image hw3check-15244-1795368393-app Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 542B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 777B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.13-slim
+#3 DONE 0.8s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 199B done
+#4 DONE 0.0s
+
+#5 [1/6] FROM docker.io/library/python:3.13-slim@sha256:e48f59cdba69a3cbd9ed2cf0f348d90d45a8d350d98134cf1070bc106ee9ed90
+#5 resolve docker.io/library/python:3.13-slim@sha256:e48f59cdba69a3cbd9ed2cf0f348d90d45a8d350d98134cf1070bc106ee9ed90 0.0s done
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 94B done
+#6 DONE 0.0s
+
+#7 [2/6] WORKDIR /app
+#7 CACHED
+
+#8 [4/6] RUN pip install -r requirements.txt
+#8 CACHED
+
+#9 [3/6] COPY app/requirements.txt .
+#9 CACHED
+
+#10 [5/6] COPY app/app.py .
+#10 CACHED
+
+#11 [6/6] RUN useradd --system --uid 10001 --user-group --no-create-home --shell /usr/sbin/nologin app     && mkdir /data     && chown app:app /data
+#11 CACHED
+
+#12 exporting to image
+#12 exporting layers done
+#12 exporting manifest sha256:1be4b1b7345ad795100a4e936682662ff388adcd10004c1183725d10d8b485cc done
+#12 exporting config sha256:e7603c537714237601f2d3a8a438f0080e1849be7663bbacf851173a2c621c65 done
+#12 exporting attestation manifest sha256:14139dfb85fb4968ef8405a571332dc20d7d20e402ce0a4f4c4ec5f1320ad776 done
+#12 exporting manifest list sha256:3e79b14ec96a9dce3f2c8ea9e9ffb3b8296914afee040692476986324231f9d6 done
+#12 naming to docker.io/library/hw3check-15244-1795368393-app:latest done
+#12 unpacking to docker.io/library/hw3check-15244-1795368393-app:latest done
+#12 DONE 0.0s
+
+#13 resolving provenance for metadata file
+#13 DONE 0.0s
+ Image hw3check-15244-1795368393-app Built 
+ Network hw3check-15244-1795368393_default Creating 
+ Network hw3check-15244-1795368393_default Creating 
+ Volume hw3check-15244-1795368393_redis_data Creating 
+ Volume hw3check-15244-1795368393_redis_data Creating 
+ Volume hw3check-15244-1795368393_redis_data Created 
+ Volume hw3check-15244-1795368393_redis_data Created 
+ Network hw3check-15244-1795368393_default Created 
+ Network hw3check-15244-1795368393_default Created 
+ Container hw3check-15244-1795368393-redis-1 Creating 
+ Container hw3check-15244-1795368393-redis-1 Created 
+ Container hw3check-15244-1795368393-app-1 Creating 
+ Container hw3check-15244-1795368393-app-1 Created 
+ Container hw3check-15244-1795368393-redis-1 Starting 
+ Container hw3check-15244-1795368393-redis-1 Started 
+ Container hw3check-15244-1795368393-redis-1 Waiting 
+ Container hw3check-15244-1795368393-redis-1 Healthy 
+ Container hw3check-15244-1795368393-app-1 Starting 
+ Container hw3check-15244-1795368393-app-1 Started 
+ Container hw3check-15244-1795368393-app-1 Waiting 
+ Container hw3check-15244-1795368393-redis-1 Waiting 
+ Container hw3check-15244-1795368393-redis-1 Healthy 
+ Container hw3check-15244-1795368393-app-1 Healthy 
+    приложение и Redis готовы
+
+==> 1a. Ограничения контейнера app
+    ok: UID процесса = 10001
+    ok: read_only rootfs = true
+    ok: лимит памяти (256 MiB) = 268435456
+    ok: лимит CPU (1 ядро) = 1000000000
+    ok: запись в корневую ФС запрещена
+
+==> 2. Начальное значение 0 и 5 запросов POST /increment
+    ok: исходный счётчик = 0
+    ok: счётчик после POST #1 = 1
+    ok: счётчик после POST #2 = 2
+    ok: счётчик после POST #3 = 3
+    ok: счётчик после POST #4 = 4
+    ok: счётчик после POST #5 = 5
+    ok: GET / после 5 инкрементов = 5
+
+==> 3. Пересоздание контейнера app (Redis не трогаем)
+ Container hw3check-15244-1795368393-app-1 Recreate 
+ Container hw3check-15244-1795368393-app-1 Recreated 
+ Container hw3check-15244-1795368393-app-1 Starting 
+ Container hw3check-15244-1795368393-app-1 Started 
+ Container hw3check-15244-1795368393-app-1 Waiting 
+ Container hw3check-15244-1795368393-app-1 Healthy 
+    ok: hostname deaa9ca3897c -> 18367264460a
+    ok: контейнер Redis не пересоздавался = 88c8271f91fdebc7c3ea3c4d111028a9e8315634211333340964d7bebfa02c48
+    ok: счётчик после пересоздания app = 5
+
+==> 4. Остановка и повторный запуск Redis
+ Container hw3check-15244-1795368393-redis-1 Stopping 
+ Container hw3check-15244-1795368393-redis-1 Stopped 
+    ok: GET /healthz при остановленном Redis = 200
+    ok: GET /readyz при остановленном Redis = 503
+    ok: POST /increment при остановленном Redis = 503
+    ok: приложение всё ещё живо = 200
+ Container hw3check-15244-1795368393-redis-1 Starting 
+ Container hw3check-15244-1795368393-redis-1 Started 
+    ok: GET / после возвращения Redis (без перезапуска app) = 5
+    ok: POST /increment после возвращения Redis = 6
+
+==> 5. Согласованная резервная копия каталога данных Redis
+ Container hw3check-15244-1795368393-app-1 Stopping 
+ Container hw3check-15244-1795368393-app-1 Stopped 
+ Container hw3check-15244-1795368393-redis-1 Stopping 
+ Container hw3check-15244-1795368393-redis-1 Stopped 
+    ok: копия создана: /Users/arina/Downloads/hw3_docker/backups/redis-data-hw3check-15244-1795368393.tar (6144 байт)
+    (в ней счётчик 6)
+
+==> 6. Удаление тестового проекта вместе с volumes (down -v)
+ Container hw3check-15244-1795368393-app-1 Stopping 
+ Container hw3check-15244-1795368393-app-1 Stopped 
+ Container hw3check-15244-1795368393-app-1 Removing 
+ Container hw3check-15244-1795368393-app-1 Removed 
+ Container hw3check-15244-1795368393-redis-1 Stopping 
+ Container hw3check-15244-1795368393-redis-1 Stopped 
+ Container hw3check-15244-1795368393-redis-1 Removing 
+ Container hw3check-15244-1795368393-redis-1 Removed 
+ Volume hw3check-15244-1795368393_redis_data Removing 
+ Network hw3check-15244-1795368393_default Removing 
+ Volume hw3check-15244-1795368393_redis_data Removed 
+ Network hw3check-15244-1795368393_default Removed 
+    ok: проект и volume удалены
+
+OK: все проверки пройдены
